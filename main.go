@@ -24,9 +24,20 @@ func domainCurate(domain string) (string, error) {
 	return undotted, nil
 }
 
+// sameSLD validates a slice for same domain on all
+func hasSameSLD(domains []*publicsuffix.DomainName) bool {
+	defsld := domains[0].SLD
+	for _, domain := range domains {
+		if defsld != domain.SLD {
+			return false
+		}
+	}
+	return true
+}
+
 // domainLevel returns the level of root domain from .
-func domainLevel(domain string) int {
-	return strings.Count(domain, ".")
+func domainLevel(TRD string) int {
+	return strings.Count(TRD, ".")
 }
 
 // TODO: remove duplicate domains
@@ -40,11 +51,21 @@ func main() {
 		os.Exit(1)
 	}
 	scanner := bufio.NewScanner(os.Stdin)
+	domains := make([]*publicsuffix.DomainName, 0)
 	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+		raw := scanner.Text()
+		curated, err := domainCurate(raw)
+		if err != nil {
+			panic(err)
+		}
+		parsed, err := publicsuffix.Parse(curated)
+		if err != nil {
+			panic(err)
+		}
+		domains = append(domains, parsed)
 	}
-	result, err := publicsuffix.Parse("1.www.example.com")
-	fmt.Println(result.TLD)
-	fmt.Println(result.SLD)
-	fmt.Println(result.TRD)
+	if !hasSameSLD(domains) {
+		fmt.Fprintln(os.Stderr, "error: different domain in provided list")
+		os.Exit(1)
+	}
 }
