@@ -24,7 +24,7 @@ func domainCurate(domain string) (string, error) {
 	return undotted, nil
 }
 
-// sameSLD validates a slice for same domain on all
+// hasSameSLD validates a slice for same domain on all
 func hasSameSLD(domains []*publicsuffix.DomainName) bool {
 	defsld := domains[0].SLD
 	for _, domain := range domains {
@@ -35,9 +35,43 @@ func hasSameSLD(domains []*publicsuffix.DomainName) bool {
 	return true
 }
 
-// domainLevel returns the level of root domain from .
-func domainLevel(TRD string) int {
-	return strings.Count(TRD, ".")
+// parseDomain ...
+func parseDomain(domain string) (*publicsuffix.DomainName, error) {
+	curated, err := domainCurate(domain)
+	if err != nil {
+		return nil, err
+	}
+	parsed, err := publicsuffix.Parse(curated)
+	if err != nil {
+		return nil, err
+	}
+	return parsed, nil
+}
+
+// maxLevels returns the max number of subdomains levels
+func maxLevels(domains []*publicsuffix.DomainName) int {
+	var maximun int
+	for _, domain := range domains {
+		current := domainLevel(domain)
+		if current > maximun {
+			maximun = current
+		}
+	}
+	return maximun
+}
+
+func domainLevel(domain *publicsuffix.DomainName) int {
+	return strings.Count(domain.TRD, ".")
+}
+
+func getLevel(level int, domains []*publicsuffix.DomainName) []*publicsuffix.DomainName {
+	newdomains := make([]*publicsuffix.DomainName, 0)
+	for _, domain := range domains {
+		if level == domainLevel(domain) {
+			newdomains = append(newdomains, domain)
+		}
+	}
+	return newdomains
 }
 
 // TODO: remove duplicate domains
@@ -53,19 +87,17 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	domains := make([]*publicsuffix.DomainName, 0)
 	for scanner.Scan() {
-		raw := scanner.Text()
-		curated, err := domainCurate(raw)
+		new, err := parseDomain(scanner.Text())
 		if err != nil {
 			panic(err)
 		}
-		parsed, err := publicsuffix.Parse(curated)
-		if err != nil {
-			panic(err)
-		}
-		domains = append(domains, parsed)
+		domains = append(domains, new)
 	}
 	if !hasSameSLD(domains) {
 		fmt.Fprintln(os.Stderr, "error: different domain in provided list")
 		os.Exit(1)
+	}
+	for _, domain := range getLevel(1, domains) {
+		fmt.Printf("%s\n", domain)
 	}
 }
