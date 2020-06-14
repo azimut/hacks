@@ -74,17 +74,8 @@ func getLevel(level int, domains []*publicsuffix.DomainName) []*publicsuffix.Dom
 	return newdomains
 }
 
-// TODO: remove duplicate domains
-func main() {
-	finfo, err := os.Stdin.Stat()
-	if err != nil {
-		panic(err)
-	}
-	if finfo.Mode()&os.ModeNamedPipe == 0 {
-		fmt.Fprintln(os.Stderr, "error: no stdin pipe data")
-		os.Exit(1)
-	}
-	scanner := bufio.NewScanner(os.Stdin)
+// domainsFromScanner ...
+func domainsFromScanner(scanner *bufio.Scanner) ([]*publicsuffix.DomainName, error) {
 	domains := make([]*publicsuffix.DomainName, 0)
 	for scanner.Scan() {
 		new, err := parseDomain(scanner.Text())
@@ -93,11 +84,39 @@ func main() {
 		}
 		domains = append(domains, new)
 	}
-	if !hasSameSLD(domains) {
-		fmt.Fprintln(os.Stderr, "error: different domain in provided list")
-		os.Exit(1)
+	if err := scanner.Err(); err != nil {
+		return nil, err
 	}
-	for _, domain := range getLevel(1, domains) {
+	if !hasSameSLD(domains) {
+		return nil, errors.New("different domain in provided list")
+	}
+	return domains, nil
+}
+
+// errorPipeless errors if program is not called with pipe input
+func errorPipeless() error {
+	finfo, err := os.Stdin.Stat()
+	if err != nil {
+		return err
+	}
+	if finfo.Mode()&os.ModeNamedPipe == 0 {
+		return errors.New("is not called with pipe data")
+	}
+	return nil
+}
+
+// TODO: remove duplicate domains
+// TODO: fill missing domains (between levels)
+func main() {
+	if err := errorPipeless(); err != nil {
+		panic(err)
+	}
+	scanner := bufio.NewScanner(os.Stdin)
+	domains, err := domainsFromScanner(scanner)
+	if err != nil {
+		panic(err)
+	}
+	for _, domain := range getLevel(maxLevels(domains), domains) {
 		fmt.Printf("%s\n", domain)
 	}
 }
