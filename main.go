@@ -57,8 +57,18 @@ func maxLevels(domains []*publicsuffix.DomainName) int {
 			maximun = current
 		}
 	}
+	//fmt.Printf("Max level: %+v\n", maximun) // output for debug
 	return maximun
 }
+
+// stringify DomainName to string
+func stringify(domain *publicsuffix.DomainName) string {
+	return domain.TRD + "." + domain.SLD + "." + domain.TLD
+}
+
+// func stringDomain(domain *publicsuffix.DomainName) string {
+// 	return domain.TRD + "." + domain.SLD + "." + domain.TLD
+// }
 
 func domainLevel(domain *publicsuffix.DomainName) int {
 	return strings.Count(domain.TRD, ".")
@@ -107,7 +117,9 @@ func errorPipeless() error {
 
 // TODO: remove duplicate domains
 // TODO: fill missing domains (between levels)
+// TODO: use some domains from the same level to check for wildcards too
 func main() {
+	seedRandom()
 	if err := errorPipeless(); err != nil {
 		panic(err)
 	}
@@ -116,7 +128,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	for _, domain := range getLevel(maxLevels(domains), domains) {
+	for _, domain := range getLevel(0, domains) {
 		fmt.Printf("%s\n", domain)
 	}
 }
