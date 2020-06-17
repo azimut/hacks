@@ -1,6 +1,6 @@
 package main
 
-import "fmt"
+import "strings"
 
 type Domain struct {
 	name       string
@@ -8,19 +8,24 @@ type Domain struct {
 }
 
 func (d Domain) String() string {
-	return stringifyDomains(&d)
+	return stringifyDomain(&d)
 }
 
-// TODO: is backwards
-func stringifyDomains(domain *Domain) string {
-	var acc string
-	for _, value := range domain.subDomains {
-		if len(value.subDomains) == 0 {
-			acc += fmt.Sprintf("%s\n", value.name)
+func stringifyDomain(domain *Domain) string {
+	root := domain.name
+	raw := stringifyDomains(domain.subDomains, root)
+	return strings.Join(raw, "\n")
+}
+
+func stringifyDomains(domains []*Domain, root string) []string {
+	ret := make([]string, 0)
+	for _, subdomain := range domains {
+		current := subdomain.name + "." + root
+		if len(subdomain.subDomains) == 0 {
+			ret = append(ret, current)
 		} else {
-			acc += value.name + "."
-			acc += stringifyDomains(value)
+			ret = append(ret, stringifyDomains(subdomain.subDomains, current)...)
 		}
 	}
-	return acc
+	return ret
 }
