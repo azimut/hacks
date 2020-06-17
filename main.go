@@ -48,8 +48,8 @@ func parseDomain(domain string) (*publicsuffix.DomainName, error) {
 	return parsed, nil
 }
 
-// maxLevels returns the max number of subdomains levels
-func maxLevels(domains []*publicsuffix.DomainName) int {
+// maxLevel returns the max number of subdomains levels
+func maxLevel(domains []*publicsuffix.DomainName) int {
 	var maximun int
 	for _, domain := range domains {
 		current := domainLevel(domain)
@@ -60,15 +60,6 @@ func maxLevels(domains []*publicsuffix.DomainName) int {
 	//fmt.Printf("Max level: %+v\n", maximun) // output for debug
 	return maximun
 }
-
-// stringify DomainName to string
-func stringify(domain *publicsuffix.DomainName) string {
-	return domain.TRD + "." + domain.SLD + "." + domain.TLD
-}
-
-// func stringDomain(domain *publicsuffix.DomainName) string {
-// 	return domain.TRD + "." + domain.SLD + "." + domain.TLD
-// }
 
 func domainLevel(domain *publicsuffix.DomainName) int {
 	return strings.Count(domain.TRD, ".")
@@ -115,6 +106,20 @@ func errorPipeless() error {
 	return nil
 }
 
+// kvDomain return a valid key value for a domain
+func kvDomain(domain *publicsuffix.DomainName) (key, value string) {
+	level := domainLevel(domain)
+	root := domain.SLD + "." + domain.TLD
+	if level == 0 {
+		return root, domain.TRD
+	} else {
+		splitted := strings.Split(domain.TRD, ".")
+		key = strings.Join(splitted[1:level+1], ".") + "." + root
+		value = strings.Join(splitted[0:1], ".")
+		return key, value
+	}
+}
+
 // TODO: remove duplicate domains
 // TODO: fill missing domains (between levels)
 // TODO: use some domains from the same level to check for wildcards too
@@ -128,7 +133,34 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	for _, domain := range getLevel(0, domains) {
-		fmt.Printf("%s\n", domain)
+	root := domains[0].SLD + "." + domains[0].TLD
+	branches := Domain{name: root}
+	for _, domain := range domains {
+		addAtom(domain.TRD, &branches)
 	}
+}
+
+func processDomain(domains *Domain) error {
+	base := domains.name
+	state, err := doesResolve(base)
+	if err != nil {
+		return err
+	}
+	if state != "NOERROR" {
+		return errors.New(fmt.Sprintf("weird return state for root (%s)", state))
+	}
+	//
+	return nil
+}
+
+func processSubdomains(domains []*Domain, root string) error {
+	for _, subdomain := range domains {
+		current := subdomain.name + "." + root
+		if subdomain.subDomains == nil {
+			fmt.Println(current)
+		} else {
+			processSubdomains(subdomain.subDomains, current)
+		}
+	}
+	return nil
 }
