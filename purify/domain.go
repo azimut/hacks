@@ -1,9 +1,14 @@
 package main
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type Domain struct {
 	name        string
+	rcode       string
+	raddresses  []string
 	hasWildcard bool
 	subDomains  []*Domain
 }
@@ -29,4 +34,23 @@ func stringifyDomains(domains []*Domain, root string) []string {
 		}
 	}
 	return ret
+}
+
+func printBranch(domain *Domain, root string) {
+	printBranchRaw(domain, root)
+}
+func printBranchRaw(domain *Domain, acc string) {
+	fmt.Println(domain.name + "." + acc)
+	for _, subdomain := range domain.subDomains {
+		printBranchRaw(subdomain, domain.name+"."+acc)
+	}
+}
+func returnInvalid(domain *Domain) {
+	for _, subdomain := range domain.subDomains {
+		if subdomain.rcode == "NXDOMAIN" {
+			printBranch(subdomain, domain.name)
+		} else {
+			returnInvalid(subdomain)
+		}
+	}
 }

@@ -6,51 +6,58 @@ import (
 	"math/rand"
 
 	"github.com/miekg/dns"
-	"github.com/weppos/publicsuffix-go/publicsuffix"
 )
-
-// stringify DomainName to string
-func stringify(domain *publicsuffix.DomainName) string {
-	return domain.TRD + "." + domain.SLD + "." + domain.TLD
-}
 
 // getResolver get a random trusted resolver
 func getResolver() string {
-	resolvers := []string{"8.8.8.8:53", "8.8.4.4:53"}
+	resolvers := []string{"8.8.8.8:53", "8.8.4.4:53", "1.1.1.1:53", "9.9.9.9:53"}
 	return resolvers[rand.Intn(len(resolvers))]
 }
 
-// hasWildcard checks if has wildcard record, checks * and random string, assumes same level
-func hasWildcard(root string) (bool, error) {
-	asterisk, err := doesResolve("*." + root)
-	if err != nil {
-		return false, err
+// TODO: handle non A, like CNAME
+func getAnswers(msg *dns.Msg) []string {
+	var ips = make([]string, 0)
+	for _, answer := range msg.Answer {
+		if a, ok := answer.(*dns.A); ok {
+			ips = append(ips, a.A.String())
+		}
 	}
-	random, err := doesResolve(randStringBytes(rand.Intn(6)+4) + "." + root)
-	if err != nil {
-		return false, err
-	}
-	if asterisk == "NOERROR" || random == "NOERROR" {
-		return true, nil
-	}
-	if asterisk == "NXDOMAIN" && random == "NXDOMAIN" {
-		return false, nil
-	}
-	return false, errors.New(fmt.Sprintf("weird return codes (%s) and (%s)", asterisk, random))
+	return ips
 }
 
-// TODO: see what happens if there is a non A record, does this thing fails
 // doesResolve checks if A resolves to anything
-func doesResolve(domain string) (string, error) {
+func doesResolve(domain string) (*dns.Msg, error) {
 	var msg dns.Msg
 	msg.SetQuestion(dns.Fqdn(domain), dns.TypeA)
 	resp, err := dns.Exchange(&msg, getResolver())
 	if err != nil {
-		return dns.RcodeToString[resp.Rcode], err
+		return resp, err
 	}
-	if len(resp.Answer) < 1 {
-		return dns.RcodeToString[resp.Rcode], nil
+	if rcode(resp) != "NOERROR" && rcode(resp) != "NXDOMAIN" {
+		return resp, errors.New(fmt.Sprintf("strange return code(%s) for simple A query to domain(%s)", rcode(resp), domain))
 	}
-	fmt.Println(resp)
-	return dns.RcodeToString[resp.Rcode], nil
+	return resp, nil
+}
+
+func rcode(msg *dns.Msg) string {
+	return dns.RcodeToString[msg.Rcode]
+}
+
+// hasWildcard checks if has wildcard record, checks * and random string, assumes same level
+func hasWildcard(root string) (bool, []string, error) {
+	asterisk, err := doesResolve("*." + root)
+	if err != nil {
+		return false, nil, err
+	}
+	random, err := doesResolve(randStringBytes(rand.Intn(6)+4) + "." + root)
+	if err != nil {
+		return false, nil, err
+	}
+	if rcode(asterisk) == "NOERROR" || rcode(random) == "NOERROR" {
+		return true, append(getAnswers(asterisk), getAnswers(random)...), nil
+	}
+	if rcode(asterisk) == "NXDOMAIN" && rcode(random) == "NXDOMAIN" {
+		return false, nil, nil
+	}
+	return false, nil, errors.New(fmt.Sprintf("weird return codes (%d) and (%d)", asterisk.Rcode, random.Rcode))
 }
