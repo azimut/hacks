@@ -1,0 +1,2 @@
+# hacks
+golang hacks
