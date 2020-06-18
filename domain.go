@@ -3,8 +3,9 @@ package main
 import "strings"
 
 type Domain struct {
-	name       string
-	subDomains []*Domain
+	name        string
+	hasWildcard bool
+	subDomains  []*Domain
 }
 
 func (d Domain) String() string {

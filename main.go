@@ -138,6 +138,9 @@ func main() {
 	for _, domain := range domains {
 		addAtom(domain.TRD, &branches)
 	}
+	fmt.Println(branches)
+	processDomain(&branches)
+	fmt.Println(len(count))
 }
 
 func processDomain(domains *Domain) error {
@@ -150,12 +153,16 @@ func processDomain(domains *Domain) error {
 		return errors.New(fmt.Sprintf("weird return state for root (%s)", state))
 	}
 	//
+	processSubdomains(domains.subDomains, base)
 	return nil
 }
+
+var count = make(map[string]int)
 
 func processSubdomains(domains []*Domain, root string) error {
 	for _, subdomain := range domains {
 		current := subdomain.name + "." + root
+		count[current]++
 		if subdomain.subDomains == nil {
 			fmt.Println(current)
 		} else {
