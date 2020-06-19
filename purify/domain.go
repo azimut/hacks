@@ -54,3 +54,11 @@ func returnInvalid(domain *Domain) {
 		}
 	}
 }
+func returnValid(domain *Domain, acc string) {
+	fmt.Println(acc)
+	for _, subdomain := range domain.subDomains {
+		if subdomain.rcode != "NXDOMAIN" {
+			returnValid(subdomain, subdomain.name+"."+acc)
+		}
+	}
+}

@@ -65,7 +65,13 @@ func domainsFromScanner(scanner *bufio.Scanner) ([]*publicsuffix.DomainName, err
 	for scanner.Scan() {
 		new, err := parseDomain(scanner.Text())
 		if err != nil {
-			panic(err)
+			return nil, err
+		}
+		// drop dups
+		for _, domain := range domains {
+			if new == domain {
+				continue
+			}
 		}
 		domains = append(domains, new)
 	}

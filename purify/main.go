@@ -2,12 +2,11 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 )
 
-// TODO: remove duplicate domains
-// TODO: fill missing domains (between levels)
+// TODO: explode domain atoms and shuffle in subdomain?
+// TODO: return wildcard ips
 // TODO: use some domains from the same level to check for wildcards too
 func main() {
 	seedRandom()
@@ -19,50 +18,20 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// Build the recursive struct
 	root := domains[0].SLD + "." + domains[0].TLD
 	branches := Domain{name: root}
 	for _, domain := range domains {
 		addAtom(domain.TRD, &branches)
 	}
-	fmt.Println(branches)
-	err = processDomain(&branches)
-	if err != nil {
+	// Resolve nodes of the struct, filter out NX
+	if err := processDomain(&branches); err != nil {
 		panic(err)
 	}
-}
-
-func processDomain(domain *Domain) error {
-	if err := processRoots(domain, domain.name); err != nil {
-		return err
-	}
-	return nil
-}
-
-// processRoots updates DOMAIN argument with reply status
-func processRoots(domain *Domain, root string) error {
-	reply, err := doesResolve(root)
-	if err != nil {
-		return err
-	}
-	domain.rcode = rcode(reply)
-	domain.raddresses = getAnswers(reply)
-	if len(domain.subDomains) == 0 || rcode(reply) == "NXDOMAIN" {
-		return nil
-	}
-	// wildcard, _, err := hasWildcard(domain.name)
-	// if err != nil {
-	// 	return err
-	// }
-	// if wildcard {
-	// 	fmt.Printf("WILDCARD: %s\n", domain.name)
-	// 	domain.hasWildcard = true
-	// 	return nil
-	// }
-	for _, subdomain := range domain.subDomains {
-		if len(subdomain.subDomains) > 0 {
-			current := subdomain.name + "." + root
-			processRoots(subdomain, current)
-		}
-	}
-	return nil
+	// fmt.Println("---------------------")
+	// fmt.Println(domains)
+	// fmt.Println("---------------------")
+	// returnInvalid(&branches)
+	// fmt.Println("---------------------")
+	returnValid(&branches, branches.name)
 }
