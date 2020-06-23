@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/miekg/dns"
 )
@@ -19,6 +20,7 @@ func main() {
 	}
 	for _, ip := range ips {
 		addr, err := dns.ReverseAddr(ip)
+		addr = strings.TrimRight(addr, ".")
 		if err != nil {
 			panic(err)
 		}
