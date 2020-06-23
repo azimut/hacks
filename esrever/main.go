@@ -22,6 +22,6 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println(addr)
+		fmt.Printf("%s,%s\n", ip, addr)
 	}
 }
