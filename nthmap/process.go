@@ -17,7 +17,7 @@ func hostLine(host nmap.Host, start string) (string, error) {
 	if len(host.Hostnames) > 0 {
 		hostname = host.Hostnames[0].Name
 	}
-	parsedDate, err := time.Parse("Mon Jan 02 15:04:05 2006", start)
+	parsedDate, err := time.Parse("Mon Jan  2 15:04:05 2006", start)
 	if err != nil {
 		return "", err
 	}
