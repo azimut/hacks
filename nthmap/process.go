@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/tomsteele/go-nmap"
 )
 
 // hostLine returns a bareminimun line foran nmap host
-func hostLine(host nmap.Host, start string) string {
+func hostLine(host nmap.Host, start string) (string, error) {
 	address := " "
 	hostname := " "
 	if len(host.Addresses) > 0 {
@@ -16,20 +17,27 @@ func hostLine(host nmap.Host, start string) string {
 	if len(host.Hostnames) > 0 {
 		hostname = host.Hostnames[0].Name
 	}
-	return fmt.Sprintf("%s - %s - %s - %s",
-		start,
+	parsedDate, err := time.Parse("Mon Jan 02 15:04:05 2006", start)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%d|%s|%s|%s",
+		parsedDate.Unix(), //FIXME: might need timezone, before
 		host.Status.State,
 		address,
-		hostname)
+		hostname), nil
 }
 
 // printNmapFile ...
 func printNmap(parsed *nmap.NmapRun) error {
 	for _, host := range parsed.Hosts {
-		modeline := hostLine(host, parsed.StartStr)
+		modeline, err := hostLine(host, parsed.StartStr)
+		if err != nil {
+			return err
+		}
 		if len(host.Ports) > 0 {
 			for _, port := range host.Ports {
-				fmt.Printf("%s - %s - %d - %s - %s\n",
+				fmt.Printf("%s|%s|%d|%s|%s\n",
 					modeline,
 					port.State.State,
 					port.PortId,
