@@ -37,9 +37,10 @@ func printNmap(parsed *nmap.NmapRun) error {
 		}
 		if len(host.Ports) > 0 {
 			for _, port := range host.Ports {
-				fmt.Printf("%s|%s|%d|%s|%s\n",
+				fmt.Printf("%s|%s|%s|%d|%s|%s\n",
 					modeline,
 					port.State.State,
+					port.Protocol,
 					port.PortId,
 					port.Service.Name,
 					port.Service.Product)
