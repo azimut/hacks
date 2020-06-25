@@ -21,7 +21,7 @@ func hostLine(host nmap.Host, start string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%d|%s|%s|%s",
+	return fmt.Sprintf("%d\t%s\t%s\t%s",
 		parsedDate.Unix(), //FIXME: might need timezone, before
 		host.Status.State,
 		address,
@@ -37,7 +37,7 @@ func printNmap(parsed *nmap.NmapRun) error {
 		}
 		if len(host.Ports) > 0 {
 			for _, port := range host.Ports {
-				fmt.Printf("%s|%s|%s|%d|%s|%s\n",
+				fmt.Printf("%s\t%s\t%s\t%d\t%s\t%s\n",
 					modeline,
 					port.State.State,
 					port.Protocol,
