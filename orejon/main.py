@@ -5,8 +5,10 @@ from mitmproxy import http
 from mitmproxy import addonmanager
 from mitmproxy.script import concurrent
 
-import pprint
+import json
 import psycopg2
+
+from psycopg2.extras import Json
 
 TABLE_DEFINITION = """
 DROP TABLE http_entries;
@@ -18,9 +20,18 @@ CREATE TABLE IF NOT EXISTS http_entries(
     port      SMALLINT,
     path      VARCHAR(256),
     version   VARCHAR(16),
-    status    SMALLINT
+    status    SMALLINT,
+    length    SMALLINT,
+    headers   JSONB
 );
 """
+
+class MyJson(Json):
+    def dumps(self, obj):
+        d = {}
+        for x,y in obj.fields:
+            d[x.decode()]=y.decode()
+        return json.dumps(d)
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -61,13 +72,14 @@ def response(flow: http.HTTPFlow) -> None:
     }
     with conn:
         with conn.cursor() as cur:
-            cur.execute("""INSERT INTO http_entries(port, scheme, host, version, status, path, method)
-                           VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+            cur.execute("""INSERT INTO http_entries(port, scheme, host, version, status, path, method, length, headers)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                         (flow.request.port,
                          flow.request.scheme,
                          flow.request.host,
                          flow.response.http_version,
                          flow.response.status_code,
                          flow.request.path,
-                         flow.request.method,))
-    pp.pprint(data)
+                         flow.request.method,
+                         len(flow.response.get_content()),
+                         MyJson(flow.response.headers)))
