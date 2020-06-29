@@ -3,6 +3,7 @@
 from mitmproxy import ctx
 from mitmproxy import http
 from mitmproxy import addonmanager
+from mitmproxy.script import concurrent
 
 import psycopg2
 
@@ -18,7 +19,6 @@ try:
 except:
     ctx.log.error("unable to connect")
 
-
 def load(entry: addonmanager.Loader):
      cur = conn.cursor()
      cur.execute(TABLE_DEFINITION)
@@ -28,6 +28,7 @@ def done():
      conn.commit()
      conn.close()
 
+@concurrent
 def response(flow: http.HTTPFlow) -> None:
      data = {
          'request:url': flow.request.url,
