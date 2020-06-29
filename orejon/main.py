@@ -11,7 +11,6 @@ import psycopg2
 from psycopg2.extras import Json
 
 TABLE_DEFINITION = """
-DROP TABLE http_entries;
 CREATE TABLE IF NOT EXISTS http_entries(
     timestamp TIMESTAMP DEFAULT NOW(),
     method    VARCHAR(8),
