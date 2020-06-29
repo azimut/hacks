@@ -33,8 +33,6 @@ class MyJson(Json):
             d[x.decode()]=y.decode()
         return json.dumps(d)
 
-pp = pprint.PrettyPrinter(indent=4)
-
 try:
     conn = psycopg2.connect("dbname=postgres user=postgres")
 except:
