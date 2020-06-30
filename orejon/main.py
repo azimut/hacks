@@ -16,11 +16,11 @@ CREATE TABLE IF NOT EXISTS http_entries(
     method    VARCHAR(8),
     scheme    VARCHAR(8),
     host      VARCHAR(256),
-    port      SMALLINT,
+    port      INTEGER,
     path      VARCHAR(256),
     version   VARCHAR(16),
     status    SMALLINT,
-    length    SMALLINT,
+    length    INTEGER,
     headers   JSONB
 );
 """
@@ -29,7 +29,9 @@ class MyJson(Json):
     def dumps(self, obj):
         d = {}
         for x,y in obj.fields:
-            d[x.decode()]=y.decode()
+            val=y.decode()
+            key=x.decode()
+            d[key]=val
         return json.dumps(d)
 
 try:
