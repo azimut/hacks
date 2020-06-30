@@ -28,6 +28,16 @@ func hostLine(host nmap.Host, start string) (string, error) {
 		hostname), nil
 }
 
+// parseServiceName add tunnel to service name ifpresent
+func parseServiceName(service nmap.Service) (ret string) {
+	if service.Tunnel != "" {
+		ret = service.Tunnel + "/" + service.Name
+	} else {
+		ret = service.Name
+	}
+	return ret
+}
+
 // printNmapFile ...
 func printNmap(parsed *nmap.NmapRun) error {
 	for _, host := range parsed.Hosts {
@@ -42,7 +52,7 @@ func printNmap(parsed *nmap.NmapRun) error {
 					port.State.State,
 					port.Protocol,
 					port.PortId,
-					port.Service.Name,
+					parseServiceName(port.Service),
 					port.Service.Product)
 			}
 		} else {
