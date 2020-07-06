@@ -1,4 +1,4 @@
-#!/usr/bin/env mitmdump -s
+#!/usr/bin/env mitmdump --ssl-insecure -s
 
 from mitmproxy import ctx
 from mitmproxy import http
@@ -7,6 +7,7 @@ from mitmproxy.script import concurrent
 
 import json
 import psycopg2
+import os
 
 from psycopg2.extras import Json
 
@@ -21,9 +22,12 @@ CREATE TABLE IF NOT EXISTS http_entries(
     version   VARCHAR(16),
     status    SMALLINT,
     length    INTEGER,
-    headers   JSONB
+    qheaders  JSONB,
+    rheaders  JSONB
 );
 """
+
+dbname = os.getenv('DB',default='postgres')
 
 class MyJson(Json):
     def dumps(self, obj):
@@ -35,7 +39,7 @@ class MyJson(Json):
         return json.dumps(d)
 
 try:
-    conn = psycopg2.connect("dbname=postgres user=postgres")
+    conn = psycopg2.connect(dbname=dbname, user="postgres")
 except:
     ctx.log.error("unable to connect")
 
@@ -52,8 +56,8 @@ def done():
 def response(flow: http.HTTPFlow) -> None:
     with conn:
         with conn.cursor() as cur:
-            cur.execute("""INSERT INTO http_entries(port, scheme, host, version, status, path, method, length, headers)
-                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            cur.execute("""INSERT INTO http_entries(port, scheme, host, version, status, path, method, length, qheaders, rheaders)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                         (flow.request.port,
                          flow.request.scheme,
                          flow.request.host,
@@ -62,4 +66,5 @@ def response(flow: http.HTTPFlow) -> None:
                          flow.request.path,
                          flow.request.method,
                          len(flow.response.get_content()),
+                         MyJson(flow.request.headers),
                          MyJson(flow.response.headers)))
