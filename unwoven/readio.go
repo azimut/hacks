@@ -34,7 +34,11 @@ func urlsFromScanner(scanner *bufio.Scanner) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		nmaps = append(nmaps, newnmap)
+		if !inSlice(nmaps, newnmap, func(a, b string) bool {
+			return a == b
+		}) {
+			nmaps = append(nmaps, newnmap)
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
