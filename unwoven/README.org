@@ -1,0 +1,2 @@
+* unwoven
+Takes a list of urls and returns the non redundant urls by checking which ones are duplicated or repeated by a 30(1|2) redirection.
