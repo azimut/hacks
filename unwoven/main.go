@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-// - check all are urls
+// TODO: compare paths? keep one with trailing slash?
 func main() {
 	if err := errorPipeless(); err != nil {
 		panic(err)
@@ -16,5 +16,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(urls)
+	for _, url := range urls {
+		fmt.Println(url)
+	}
 }
