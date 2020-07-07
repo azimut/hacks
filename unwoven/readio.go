@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -25,7 +26,6 @@ func urlEqual(a, b string) bool {
 }
 
 func urlsFromScanner(scanner *bufio.Scanner) ([]string, error) {
-	var found bool
 	nmaps := make([]string, 0)
 	client := initClient()
 
@@ -34,6 +34,7 @@ func urlsFromScanner(scanner *bufio.Scanner) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
+		// Unique input
 		if !inSlice(nmaps, newnmap, func(a, b string) bool {
 			return a == b
 		}) {
@@ -44,16 +45,11 @@ func urlsFromScanner(scanner *bufio.Scanner) ([]string, error) {
 		return nil, err
 	}
 
+	sort.Strings(nmaps)
+
 	urls := make([]string, 0)
 	for j := 0; j < len(nmaps); j++ {
-		found = false
-		for _, value := range nmaps[j+1:] {
-			if urlEqual(nmaps[j], value) {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !inSlice(nmaps[j+1:], nmaps[j], urlEqual) {
 			urls = append(urls, nmaps[j])
 		}
 	}
