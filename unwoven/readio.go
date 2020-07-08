@@ -26,18 +26,19 @@ func urlEqual(a, b string) bool {
 }
 
 func urlsFromScanner(scanner *bufio.Scanner) ([]string, error) {
+	orig := make([]string, 0)
 	nmaps := make([]string, 0)
 	client := initClient()
 
 	for scanner.Scan() {
-		newnmap, err := getFinalUrl(scanner.Text(), client)
+		rawurl := scanner.Text()
+		newnmap, err := getFinalUrl(rawurl, client)
 		if err != nil {
 			return nil, err
 		}
 		// Unique input
-		if !inSlice(nmaps, newnmap, func(a, b string) bool {
-			return a == b
-		}) {
+		if !inSlice(nmaps, newnmap, strings.EqualFold) {
+			orig = append(orig, rawurl)
 			nmaps = append(nmaps, newnmap)
 		}
 	}
@@ -50,7 +51,7 @@ func urlsFromScanner(scanner *bufio.Scanner) ([]string, error) {
 	urls := make([]string, 0)
 	for j := 0; j < len(nmaps); j++ {
 		if !inSlice(nmaps[j+1:], nmaps[j], urlEqual) {
-			urls = append(urls, nmaps[j])
+			urls = append(urls, orig[j])
 		}
 	}
 	return urls, nil
