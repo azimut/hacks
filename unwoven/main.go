@@ -2,12 +2,17 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 )
 
+var timeout int
+
 // TODO: compare paths? keep one with trailing slash?
 func main() {
+	flag.IntVar(&timeout, "t", 5, "timeout after seconds")
+	flag.Parse()
 	if err := errorPipeless(); err != nil {
 		panic(err)
 	}
