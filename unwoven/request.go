@@ -11,7 +11,7 @@ import (
 // initClient returns an Initialized client
 func initClient() *http.Client {
 	return &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: time.Duration(timeout) * time.Second,
 		Transport: &http.Transport{
 			MaxIdleConns:        10,
 			MaxIdleConnsPerHost: 10,
