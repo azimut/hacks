@@ -40,12 +40,12 @@ func getFinalUrl(rawurl string, client *http.Client) (string, error) {
 	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0")
+	req.Header.Set("User-Agent", "Mozilla")
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	defer resp.Body.Close()
 	return fmt.Sprint(resp.Request.URL), nil
