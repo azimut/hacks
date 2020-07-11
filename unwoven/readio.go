@@ -34,7 +34,8 @@ func urlsFromScanner(scanner *bufio.Scanner) ([]string, error) {
 		rawurl := scanner.Text()
 		newnmap, err := getFinalUrl(rawurl, client)
 		if err != nil {
-			return nil, err
+			//return nil, err
+			continue
 		}
 		// Unique input
 		if !inSlice(nmaps, newnmap, strings.EqualFold) {
